@@ -1,3 +1,4 @@
+//Interface created based on the upscope endpoints given
 export interface WorkerStats {
   wait_time: number;
   workers: number;

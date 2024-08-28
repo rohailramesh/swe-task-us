@@ -15,25 +15,39 @@ const endpoints = [
 // Server on port 8080 created used web socket
 const wss = new WebSocket.Server({ port: 8080 });
 
-// Using an async function to fetch data
+// Using cache to store data for 1 minute before it expires to reduce server load
+const cache: { [url: string]: { data: any; timestamp: number } } = {};
+const CACHE_DURATION = 60000; // 1 minute
+
+// Using an async function to fetch data while error handling and using timeout
 async function fetchData() {
   try {
-    //Promise on all the endpoints by mapping onto each
-    const res = await Promise.all(
-      endpoints.map((endpoint) =>
-        axios.get(endpoint).catch((error) => {
-          console.log(`Data not fetch from ${endpoint} with error ${error}`);
-          return []; //Empty array if request failed
-        })
-      )
+    const now = Date.now();
+
+    const responses = await Promise.all(
+      endpoints.map(async (url) => {
+        if (cache[url] && now - cache[url].timestamp < CACHE_DURATION) {
+          // Return cached data if available and valid
+          return cache[url].data;
+        }
+
+        try {
+          const response = await axios.get(url, { timeout: 5000 }); //timeout in 5 seconds if request fails
+          cache[url] = { data: response.data, timestamp: now };
+          return response.data;
+        } catch (error) {
+          console.error(`Request to ${url} failed: ${error}`);
+          return null;
+        }
+      })
     );
 
-    //Success response action - using AxiosResponse type to filter data which is not null
-    const data = res
-      .filter((res): res is AxiosResponse => res !== null)
-      .map((res) => res?.data);
+    // Filter out failed requests and empty responses
+    const data = responses.filter(
+      (response): response is any => response !== null
+    );
 
-    // Broadcasting res data to all connnected clients
+    // Send data to clients
     wss.clients.forEach((client) => {
       if (client.readyState === WebSocket.OPEN) {
         try {
@@ -45,7 +59,7 @@ async function fetchData() {
       }
     });
   } catch (error) {
-    console.log(`Error fetching data: ${error}`);
+    console.error(`Error fetching data: ${error}`);
   }
 }
 

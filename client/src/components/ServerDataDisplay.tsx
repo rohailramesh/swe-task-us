@@ -12,7 +12,6 @@ import {
 } from "antd";
 import { ServerData } from "../types/serverData";
 
-// Using Ant Design components
 const { Panel } = Collapse;
 const { Title, Paragraph } = Typography;
 
@@ -22,155 +21,206 @@ interface DataProps {
 }
 
 // Formatting Functions for different types of data
-const formatBlockedKey = (item: [string, number, string]) => (
-  <div>
-    <p>
-      <strong>Key:</strong> {item[0]}
-    </p>
-    <p>
-      <strong>Count:</strong> {item[1]}
-    </p>
-    <p>
-      <strong>Timestamp:</strong> {new Date(item[2]).toLocaleString()}
-    </p>
-  </div>
-);
+const formatBlockedKey = (item: [string, number, string]) => {
+  if (!item || item.length !== 3) return <div>Invalid blocked key data</div>;
 
-const formatTopKey = (item: [string, number]) => (
-  <div>
-    <p>
-      <strong>Key:</strong> {item[0]}
-    </p>
-    <p>
-      <strong>Value:</strong> {item[1]}
-    </p>
-  </div>
-);
+  const [key, count, timestamp] = item;
 
-//Worker has 4 types so using card to display each type
+  return (
+    <div>
+      <p>
+        <strong>Key:</strong> {key}
+      </p>
+      <p>
+        <strong>Count:</strong> {count}
+      </p>
+      <p>
+        <strong>Timestamp:</strong> {new Date(timestamp).toLocaleString()}
+      </p>
+    </div>
+  );
+};
+
+const formatTopKey = (item: [string, number]) => {
+  if (!item || item.length !== 2) return <div>Invalid top key data</div>;
+
+  const [key, value] = item;
+
+  return (
+    <div>
+      <p>
+        <strong>Key:</strong> {key}
+      </p>
+      <p>
+        <strong>Value:</strong> {value}
+      </p>
+    </div>
+  );
+};
+
+// Worker has 4 types so using card to display each type
 const WorkerCard: React.FC<{ type: string; worker: any }> = ({
   type,
   worker,
-}) => (
-  <Card title={`Type: ${type}`} style={{ marginBottom: 16 }}>
-    <Paragraph>Wait Time: {worker.wait_time}</Paragraph>
-    <Paragraph>Workers: {worker.workers}</Paragraph>
-    <Paragraph>Waiting: {worker.waiting}</Paragraph>
-    <Paragraph>Idle: {worker.idle}</Paragraph>
-    <Paragraph>Time To Return: {worker.time_to_return}</Paragraph>
+}) => {
+  if (!worker)
+    return (
+      <Card title={`Type: ${type}`} style={{ marginBottom: 16 }}>
+        No worker data
+      </Card>
+    );
 
-    <Divider>Recently Blocked Keys</Divider>
-    {worker.recently_blocked_keys.length > 0 ? (
-      <List
-        dataSource={worker.recently_blocked_keys}
-        renderItem={(item) => (
-          <List.Item>
-            {formatBlockedKey(item as [string, number, string])}
-          </List.Item>
-        )}
-      />
-    ) : (
-      <Paragraph>No recently blocked keys</Paragraph>
-    )}
+  const {
+    wait_time,
+    workers,
+    waiting,
+    idle,
+    time_to_return,
+    recently_blocked_keys = [],
+    top_keys = [],
+  } = worker;
 
-    <Divider>Top Keys</Divider>
-    {worker.top_keys.length > 0 ? (
-      <List
-        dataSource={worker.top_keys}
-        renderItem={(item) => (
-          <List.Item>{formatTopKey(item as [string, number])}</List.Item>
-        )}
-      />
-    ) : (
-      <Paragraph>No top keys</Paragraph>
-    )}
-  </Card>
-);
+  return (
+    <Card title={`Type: ${type}`} style={{ marginBottom: 16 }}>
+      <Paragraph>Wait Time: {wait_time ?? "N/A"}</Paragraph>
+      <Paragraph>Workers: {workers ?? "N/A"}</Paragraph>
+      <Paragraph>Waiting: {waiting ?? "N/A"}</Paragraph>
+      <Paragraph>Idle: {idle ?? "N/A"}</Paragraph>
+      <Paragraph>Time To Return: {time_to_return ?? "N/A"}</Paragraph>
+
+      <Divider>Recently Blocked Keys</Divider>
+      {recently_blocked_keys.length > 0 ? (
+        <List
+          dataSource={recently_blocked_keys}
+          renderItem={(item) => (
+            <List.Item>
+              {formatBlockedKey(item as [string, number, string])}
+            </List.Item>
+          )}
+        />
+      ) : (
+        <Paragraph>No recently blocked keys</Paragraph>
+      )}
+
+      <Divider>Top Keys</Divider>
+      {top_keys.length > 0 ? (
+        <List
+          dataSource={top_keys}
+          renderItem={(item) => (
+            <List.Item>{formatTopKey(item as [string, number])}</List.Item>
+          )}
+        />
+      ) : (
+        <Paragraph>No top keys</Paragraph>
+      )}
+    </Card>
+  );
+};
 
 // Displaying data in a collapsible format based on the region
 const ServerDataDisplay: React.FC<DataProps> = ({ data }) => {
+  if (!data || !Array.isArray(data)) return <div>No data available</div>;
+
   return (
     <Collapse accordion className="data-container">
-      {data.map((entry, index) => (
-        <Panel
-          header={<Title level={4}>Region: {entry.region}</Title>}
-          key={index}
-          extra={
-            <>
-              <Tag color={entry.status ? "green" : "red"}>
-                Status: {entry.status ? "Online" : "Offline"}
-              </Tag>
-              <Tag color={entry.results.services.redis ? "green" : "red"}>
-                Redis: {entry.results.services.redis ? "Online" : "Offline"}
-              </Tag>
-              <Tag color={entry.results.services.database ? "green" : "red"}>
-                Database:{" "}
-                {entry.results.services.database ? "Online" : "Offline"}
-              </Tag>
-            </>
-          }
-        >
-          <Card>
-            <Title level={4}>Stats</Title>
-            <Row gutter={16}>
-              <Col span={8}>
-                <Card>
-                  <Statistic
-                    title="Servers Count"
-                    value={entry.results.stats.servers_count}
-                  />
-                </Card>
-              </Col>
-              <Col span={8}>
-                <Card>
-                  <Statistic
-                    title="Online"
-                    value={entry.results.stats.online}
-                  />
-                </Card>
-              </Col>
-              <Col span={8}>
-                <Card>
-                  <Statistic
-                    title="Session"
-                    value={entry.results.stats.session}
-                  />
-                </Card>
-              </Col>
-              <Col span={12}>
-                <Card>
-                  <Statistic
-                    title="Active Connections"
-                    value={entry.results.stats.server.active_connections}
-                  />
-                </Card>
-              </Col>
-              <Col span={12}>
-                <Card>
-                  <Statistic
-                    title="CPU Load"
-                    value={entry.results.stats.server.cpu_load}
-                    precision={2}
-                  />
-                </Card>
-              </Col>
-              <Col span={24}>
-                <Card>
-                  <Statistic
-                    title="Timers"
-                    value={entry.results.stats.server.timers}
-                  />
-                </Card>
-              </Col>
-            </Row>
+      {data.map((entry, index) => {
+        if (
+          !entry ||
+          !entry.results ||
+          !entry.results.stats ||
+          !entry.results.stats.server
+        ) {
+          return (
+            <Panel
+              header={
+                <Title level={4}>Region: {entry.region || "Unknown"}</Title>
+              }
+              key={index}
+            >
+              <Card>No valid data available for this entry</Card>
+            </Panel>
+          );
+        }
 
-            <Title level={4}>Workers</Title>
-            {entry.results.stats.server.workers.map(([type, worker], index) => (
-              <WorkerCard key={index} type={type} worker={worker} />
-            ))}
-          </Card>
-        </Panel>
-      ))}
+        const { region, status, results } = entry;
+        const { stats } = results;
+        const { server } = stats;
+
+        return (
+          <Panel
+            header={<Title level={4}>Region: {region || "Unknown"}</Title>}
+            key={index}
+            extra={
+              <>
+                <Tag color={status ? "green" : "red"}>
+                  Status: {status ? "Online" : "Offline"}
+                </Tag>
+                <Tag color={results.services.redis ? "green" : "red"}>
+                  Redis: {results.services.redis ? "Online" : "Offline"}
+                </Tag>
+                <Tag color={results.services.database ? "green" : "red"}>
+                  Database: {results.services.database ? "Online" : "Offline"}
+                </Tag>
+              </>
+            }
+          >
+            <Card>
+              <Title level={4}>Stats</Title>
+              <Row gutter={16}>
+                <Col span={8}>
+                  <Card>
+                    <Statistic
+                      title="Servers Count"
+                      value={stats.servers_count ?? 0}
+                    />
+                  </Card>
+                </Col>
+                <Col span={8}>
+                  <Card>
+                    <Statistic title="Online" value={stats.online ?? 0} />
+                  </Card>
+                </Col>
+                <Col span={8}>
+                  <Card>
+                    <Statistic title="Session" value={stats.session ?? 0} />
+                  </Card>
+                </Col>
+                <Col span={12}>
+                  <Card>
+                    <Statistic
+                      title="Active Connections"
+                      value={server.active_connections ?? 0}
+                    />
+                  </Card>
+                </Col>
+                <Col span={12}>
+                  <Card>
+                    <Statistic
+                      title="CPU Load"
+                      value={server.cpu_load ?? 0}
+                      precision={2}
+                    />
+                  </Card>
+                </Col>
+                <Col span={24}>
+                  <Card>
+                    <Statistic title="Timers" value={server.timers ?? 0} />
+                  </Card>
+                </Col>
+              </Row>
+
+              <Title level={4}>Workers</Title>
+              {server.workers && server.workers.length > 0 ? (
+                server.workers.map(([type, worker], index) => (
+                  <WorkerCard key={index} type={type} worker={worker} />
+                ))
+              ) : (
+                <Paragraph>No worker data available</Paragraph>
+              )}
+            </Card>
+          </Panel>
+        );
+      })}
     </Collapse>
   );
 };
