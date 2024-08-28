@@ -11,7 +11,8 @@ const App: React.FC = () => {
   const [timestamp, setTimestamp] = useState<string>("");
 
   useEffect(() => {
-    const ws = new WebSocket("ws://https://swe-task-us-1.onrender.com");
+    const ws = new WebSocket("wss://swe-task-us-1.onrender.com");
+
     ws.onopen = () => {
       console.log("Connected to server");
     };
