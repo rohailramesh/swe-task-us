@@ -20,7 +20,7 @@ const cache: { [url: string]: { data: any; timestamp: number } } = {};
 const CACHE_DURATION = 60000; // 1 minute
 
 // Using an async function to fetch data while error handling and using timeout
-async function fetchData() {
+export async function fetchData() {
   try {
     const now = Date.now();
 
