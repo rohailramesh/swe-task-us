@@ -12,3 +12,32 @@
 .worker-stats {
   margin-bottom: 10px;
 }
+
+.App {
+  font-family: Arial, sans-serif;
+}
+
+.header-container {
+  display: flex;
+  align-items: center;
+  gap: 16px; /* Space between image and text */
+  padding: 16px;
+}
+
+.header-image {
+  width: 50px; /* Adjust size as needed */
+  height: auto;
+}
+
+.header-text {
+  display: flex;
+  flex-direction: column;
+}
+
+.header-text .ant-typography {
+  margin: 0;
+}
+
+.header-text .ant-typography-secondary {
+  margin-top: 4px;
+}

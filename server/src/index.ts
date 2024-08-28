@@ -36,9 +36,13 @@ async function fetchData() {
     // Broadcasting res data to all connnected clients
     wss.clients.forEach((client) => {
       if (client.readyState === WebSocket.OPEN) {
-        client.send(JSON.stringify(data));
+        try {
+          const jsonData = JSON.stringify(data);
+          client.send(jsonData);
+        } catch (error) {
+          console.error("Error sending data:", error);
+        }
       }
-      console.log("Data sent to client");
     });
   } catch (error) {
     console.log(`Error fetching data: ${error}`);
