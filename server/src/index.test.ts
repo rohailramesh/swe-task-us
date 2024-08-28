@@ -1,6 +1,6 @@
 import WebSocket from "ws";
 import { fetchData } from ".";
-import mock from "../__mocks__/axios";
+import mock from "./__mocks__/axios";
 import { Server } from "http";
 import { WebSocketServer } from "ws";
 
